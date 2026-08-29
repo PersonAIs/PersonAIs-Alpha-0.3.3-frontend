@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -11,14 +10,13 @@ const supabase = createClient(
 );
 
 // 2. Dynamic Backend URL Fallback
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net";
 
 export default function ChatPage() {
   const router = useRouter();
   const [userId, setUserId] = useState(null);
   const [messages, setMessages] = useState([
-    { role: "ai", content: "Neural link established. How can I assist you today?" },
+    { role: "ai", content: "Neural link established. How can I assist you today?" }
   ]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,10 +27,8 @@ export default function ChatPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (!session?.user) {
           router.push("/auth");
         } else {
@@ -47,10 +43,8 @@ export default function ChatPage() {
 
     checkSession();
 
-    // Fixed Supabase v2 Subscription Syntax
-    const {
-      data: { subscription: authListener },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Properly destructured Supabase v2 listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) {
         router.push("/auth");
       } else {
@@ -60,7 +54,7 @@ export default function ChatPage() {
     });
 
     return () => {
-      authListener?.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [router]);
 
@@ -94,9 +88,7 @@ export default function ChatPage() {
       if (!contentType || !contentType.includes("application/json")) {
         const text = await res.text();
         console.error("Raw Server Response:", text);
-        throw new Error(
-          "Matrix Offline: Backend returned HTML. Verify NEXT_PUBLIC_BACKEND_URL."
-        );
+        throw new Error(`Matrix Offline: Backend returned HTML. Verify NEXT_PUBLIC_BACKEND_URL.`);
       }
 
       const data = await res.json();
@@ -107,10 +99,7 @@ export default function ChatPage() {
 
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          content: data.reply || data.response || "Neural signal confirmed.",
-        },
+        { role: "ai", content: data.reply || data.response || "Neural signal confirmed." }
       ]);
     } catch (error) {
       console.error("Chat Error:", error);
@@ -118,8 +107,8 @@ export default function ChatPage() {
         ...prev,
         {
           role: "ai",
-          content: `Critical Error: ${error.message}`,
-        },
+          content: `Critical Error: ${error.message}`
+        }
       ]);
     } finally {
       setIsLoading(false);
@@ -162,9 +151,7 @@ export default function ChatPage() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex ${
-                msg.role === "user" ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[75%] rounded-2xl px-5 py-3 text-sm shadow-sm ${
@@ -188,17 +175,14 @@ export default function ChatPage() {
         </div>
 
         {/* Input Bar */}
-        <form
-          onSubmit={handleSendMessage}
-          className="p-4 bg-white/40 border-t border-blue-100/60 flex gap-3"
-        >
+        <form onSubmit={handleSendMessage} className="p-4 bg-white/40 border-t border-blue-100/60 flex gap-3">
           <input
             type="text"
             placeholder="Send a transmission..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
-            className="flex-1 bg-white/70 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm disabled:opacity-50"
+            className="flex-1 bg-white/70 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
           />
           <button
             type="submit"
