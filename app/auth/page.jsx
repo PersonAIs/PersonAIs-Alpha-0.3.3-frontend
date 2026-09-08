@@ -6,6 +6,7 @@ import AeroBubbles from "../components/AeroBubbles";
 import TermsDialog from "../components/TermsDialog";
 import {
   describeAuthError,
+  isAlreadyRegisteredError,
   isValidEmail,
   MIN_PASSWORD_LENGTH,
 } from "../lib/authErrors";
@@ -102,22 +103,29 @@ export default function AuthPage() {
       password,
     });
 
-    if (error) {
-      setErrorMsg(describeAuthError(error, "signup"));
-      return;
-    }
-
-    // Supabase masks "this address is taken" to prevent user enumeration: it
-    // returns a decoy user with an empty `identities` array and no error at
-    // all. The old code read that as success and showed "check your email", so
-    // returning testers believed they had registered when nothing happened.
+    // Supabase reports an existing address two different ways depending on the
+    // project's Confirm Email setting. With confirmations OFF it raises
+    // `user_already_exists`. With them ON it masks the collision to prevent
+    // user enumeration, returning a decoy user with an empty `identities`
+    // array and no error at all — which the old code read as success and
+    // answered with "check your email", so returning testers believed they had
+    // registered when nothing had happened. Treat both as the same outcome.
     const identities = data?.user?.identities;
-    if (Array.isArray(identities) && identities.length === 0) {
+    const alreadyRegistered =
+      isAlreadyRegisteredError(error) ||
+      (!error && Array.isArray(identities) && identities.length === 0);
+
+    if (alreadyRegistered) {
       switchMode("login");
       setEmail(cleanEmail);
       setErrorMsg(
         "That email is already registered. Log in with it below instead of creating a second account."
       );
+      return;
+    }
+
+    if (error) {
+      setErrorMsg(describeAuthError(error, "signup"));
       return;
     }
 

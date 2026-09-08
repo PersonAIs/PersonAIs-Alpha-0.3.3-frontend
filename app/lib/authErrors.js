@@ -14,6 +14,26 @@ export function isValidEmail(value) {
 }
 
 /**
+ * True when Supabase is telling us the address already has an account.
+ *
+ * Which shape this arrives in depends on the project's Confirm Email setting:
+ * with confirmations OFF the API returns a `user_already_exists` error, and
+ * with them ON it hides the collision behind a decoy user instead (handled at
+ * the call site). Both mean the same thing to the user.
+ */
+export function isAlreadyRegisteredError(error) {
+  if (!error) return false;
+  const code = error.code ?? "";
+  const raw = String(error.message ?? "").toLowerCase();
+  return (
+    code === "user_already_exists" ||
+    code === "email_exists" ||
+    raw.includes("already registered") ||
+    raw.includes("user already registered")
+  );
+}
+
+/**
  * @param {unknown} error   Error thrown or returned by supabase-js.
  * @param {"login"|"signup"} mode Which form the user was submitting.
  * @returns {string} A message safe to show in the UI.
@@ -35,12 +55,7 @@ export function describeAuthError(error, mode) {
     return "This account was created while email confirmation was still switched on. Turn off Confirm Email in Supabase (Authentication → Sign In / Providers → Email), or confirm the address once, then log in again.";
   }
 
-  if (
-    code === "user_already_exists" ||
-    code === "email_exists" ||
-    raw.includes("already registered") ||
-    raw.includes("user already registered")
-  ) {
+  if (isAlreadyRegisteredError(error)) {
     return "That email is already registered. Log in with it instead.";
   }
 
