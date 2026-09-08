@@ -1,70 +1,87 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import AeroBubbles from "./components/AeroBubbles";
+import {
+  isSupabaseConfigured,
+  supabase,
+  SUPABASE_MISSING_MESSAGE,
+} from "./lib/supabaseClient";
 
-// 1. Initialize Supabase Client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net";
 
-// 2. Dynamic Backend URL Fallback
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net";
+const AVATAR_STORAGE_KEY = "alpha_avatar_image";
 
 export default function ChatPage() {
   const router = useRouter();
   const [userId, setUserId] = useState(null);
+  const [avatar, setAvatar] = useState(null);
   const [messages, setMessages] = useState([
-    { role: "ai", content: "Neural link established. How can I assist you today?" }
+    {
+      role: "ai",
+      content: "Neural link established. How can I assist you today?",
+    },
   ]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  // Nothing to verify when Supabase was never configured, so start settled.
+  const [isAuthenticating, setIsAuthenticating] = useState(isSupabaseConfigured);
   const chatEndRef = useRef(null);
 
-  // 3. Auth Gatekeeper: Redirect unauthenticated visitors to /auth
+  // Auth gatekeeper: unauthenticated visitors go back to the gateway.
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
-          router.push("/auth");
-        } else {
-          setUserId(session.user.id);
-          setIsAuthenticating(false);
-        }
-      } catch (err) {
-        console.error("Auth verification failed:", err);
-        router.push("/auth");
+    if (!supabase) return undefined;
+
+    let cancelled = false;
+
+    const applySession = (session) => {
+      if (cancelled) return;
+      if (!session?.user) {
+        router.replace("/auth");
+        return;
       }
+      setUserId(session.user.id);
+      setIsAuthenticating(false);
     };
 
-    checkSession();
+    supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data?.session))
+      .catch(() => {
+        if (!cancelled) router.replace("/auth");
+      });
 
-    // Properly destructured Supabase v2 listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        router.push("/auth");
-      } else {
-        setUserId(session.user.id);
-        setIsAuthenticating(false);
-      }
-    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => applySession(session));
 
     return () => {
+      cancelled = true;
       subscription?.unsubscribe();
     };
   }, [router]);
 
-  // Auto-scroll chat to bottom
+  // The twin portrait saved during setup.
+  useEffect(() => {
+    try {
+      setAvatar(window.localStorage.getItem(AVATAR_STORAGE_KEY));
+    } catch {
+      setAvatar(null);
+    }
+  }, []);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
+  const handleSignOut = useCallback(async () => {
+    await supabase?.auth.signOut();
+    router.replace("/auth");
+  }, [router]);
+
+  const handleSendMessage = async (event) => {
+    event.preventDefault();
     if (!inputText.trim() || isLoading) return;
 
     const userMsg = inputText.trim();
@@ -75,9 +92,7 @@ export default function ChatPage() {
     try {
       const res = await fetch(`${BACKEND_URL}/api/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId || "guest_tester",
           message: userMsg,
@@ -88,7 +103,9 @@ export default function ChatPage() {
       if (!contentType || !contentType.includes("application/json")) {
         const text = await res.text();
         console.error("Raw Server Response:", text);
-        throw new Error(`Matrix Offline: Backend returned HTML. Verify NEXT_PUBLIC_BACKEND_URL.`);
+        throw new Error(
+          "Matrix offline: the backend returned HTML. Verify NEXT_PUBLIC_BACKEND_URL."
+        );
       }
 
       const data = await res.json();
@@ -99,16 +116,16 @@ export default function ChatPage() {
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: data.reply || data.response || "Neural signal confirmed." }
+        {
+          role: "ai",
+          content: data.reply || data.response || "Neural signal confirmed.",
+        },
       ]);
     } catch (error) {
       console.error("Chat Error:", error);
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          content: `Critical Error: ${error.message}`
-        }
+        { role: "ai", content: `Critical error: ${error.message}`, isError: true },
       ]);
     } finally {
       setIsLoading(false);
@@ -117,79 +134,126 @@ export default function ChatPage() {
 
   if (isAuthenticating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ebf3fa] via-[#e2edfa] to-[#d6e7f7] flex items-center justify-center font-sans">
-        <div className="text-slate-600 font-semibold text-sm animate-pulse">
-          Synchronizing neural session...
+      <div className="relative flex h-full items-center justify-center">
+        <AeroBubbles />
+        <p className="relative z-10 animate-pulse text-sm font-semibold text-aero-sky-800">
+          Synchronizing neural session…
+        </p>
+      </div>
+    );
+  }
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="relative flex h-full items-center justify-center p-6">
+        <AeroBubbles />
+        <div className="aero-panel relative z-10 max-w-md p-8 text-center">
+          <span className="mb-3 block text-4xl" aria-hidden="true">
+            🔌
+          </span>
+          <h1 className="text-lg font-bold text-aero-sky-800">Not connected</h1>
+          <p className="mt-2 text-sm text-aero-ink-soft">{SUPABASE_MISSING_MESSAGE}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ebf3fa] via-[#e2edfa] to-[#d6e7f7] text-slate-800 flex flex-col items-center justify-center p-6 font-sans">
-      <div className="max-w-3xl w-full h-[80vh] bg-white/70 backdrop-blur-xl border border-blue-100 rounded-3xl shadow-xl flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-blue-100/60 bg-white/40 flex justify-between items-center">
-          <div>
-            <h1 className="font-bold text-blue-700 text-lg">PersonAIs Matrix</h1>
-            <p className="text-xs text-slate-500">Alpha 0.3.3 Live Instance</p>
-          </div>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push("/auth");
-            }}
-            className="text-xs px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition"
-          >
-            Sign Out
-          </button>
-        </div>
+    <div className="relative flex h-full flex-col items-center justify-center p-4 md:p-6">
+      <AeroBubbles />
 
-        {/* Message Feed */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="aero-panel relative z-10 flex h-full max-h-[calc(100vh-3rem)] w-full max-w-3xl flex-col">
+        <header className="flex flex-none items-center justify-between border-b border-white/70 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 flex-none overflow-hidden rounded-full border-2 border-white bg-aero-sky-100 shadow-[0_6px_14px_-8px_rgba(12,61,89,0.9)]">
+              {avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatar}
+                  alt="Your digital twin"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span
+                  className="flex h-full w-full items-center justify-center text-lg"
+                  aria-hidden="true"
+                >
+                  🧬
+                </span>
+              )}
+            </div>
+            <div>
+              <h1 className="aero-wordmark text-lg font-extrabold tracking-tight">
+                PersonAIs Matrix
+              </h1>
+              <p className="text-[11px] font-semibold text-aero-ink-soft">
+                Alpha 0.4.0 live instance
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="aero-btn aero-btn--glass px-4 py-2 text-xs"
+          >
+            <span>Sign Out</span>
+          </button>
+        </header>
+
+        <div className="aero-scroll flex-1 space-y-4 overflow-y-auto p-6">
           {messages.map((msg, idx) => (
             <div
               key={idx}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-5 py-3 text-sm shadow-sm ${
+                className={`max-w-[78%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-br-none"
-                    : "bg-white/80 text-slate-800 border border-blue-100 rounded-bl-none"
+                    ? "rounded-br-md border border-aero-sky-600 bg-gradient-to-b from-aero-sky-400 to-aero-sky-600 text-white"
+                    : msg.isError
+                      ? "rounded-bl-md border border-red-200 bg-red-50/90 text-red-700"
+                      : "rounded-bl-md border border-white/85 bg-white/85 text-aero-ink"
                 }`}
               >
                 {msg.content}
               </div>
             </div>
           ))}
+
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white/80 border border-blue-100 text-slate-500 rounded-2xl px-5 py-3 text-xs animate-pulse">
-                Accessing neural matrix...
+              <div className="animate-pulse rounded-2xl rounded-bl-md border border-white/85 bg-white/70 px-5 py-3 text-xs font-semibold text-aero-ink-soft">
+                Accessing neural matrix…
               </div>
             </div>
           )}
+
           <div ref={chatEndRef} />
         </div>
 
-        {/* Input Bar */}
-        <form onSubmit={handleSendMessage} className="p-4 bg-white/40 border-t border-blue-100/60 flex gap-3">
+        <form
+          onSubmit={handleSendMessage}
+          className="flex flex-none gap-3 border-t border-white/70 p-4"
+        >
+          <label htmlFor="message" className="sr-only">
+            Message
+          </label>
           <input
+            id="message"
             type="text"
-            placeholder="Send a transmission..."
+            placeholder="Send a transmission…"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={(event) => setInputText(event.target.value)}
             disabled={isLoading}
-            className="flex-1 bg-white/70 border border-blue-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:border-blue-500 shadow-sm"
+            className="aero-field flex-1 px-5 py-3 text-sm"
           />
           <button
             type="submit"
             disabled={isLoading || !inputText.trim()}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition shadow-md"
+            className="aero-btn px-7 py-3 text-sm"
           >
-            Send
+            <span>Send</span>
           </button>
         </form>
       </div>

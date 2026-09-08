@@ -1,26 +1,416 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   PersonAIs Alpha 0.4.0 — "Frutiger Aero" theme
+   ----------------------------------------------------------------------------
+   A deliberate throwback to the 2000s-2010s consumer-tech look: glossy aqua
+   buttons, frosted glass panels, sky-blue-to-grass-green gradients, bubbles
+   and lens glow. Everything below is expressed as tokens first, then a small
+   set of component classes so pages stay mostly Tailwind.
+   ========================================================================= */
+
+@theme {
+  /* Sky — the blue half of the palette */
+  --color-aero-sky-50: #f2fbff;
+  --color-aero-sky-100: #e0f5ff;
+  --color-aero-sky-200: #bfe9fd;
+  --color-aero-sky-300: #8fd8f8;
+  --color-aero-sky-400: #52c1f0;
+  --color-aero-sky-500: #23a7e0;
+  --color-aero-sky-600: #0f88c2;
+  --color-aero-sky-700: #0a6a99;
+  --color-aero-sky-800: #0b5175;
+  --color-aero-sky-900: #0c3d59;
+
+  /* Grass — the green half of the palette */
+  --color-aero-grass-50: #f2fdf1;
+  --color-aero-grass-100: #e2fadd;
+  --color-aero-grass-200: #c2f2b6;
+  --color-aero-grass-300: #97e484;
+  --color-aero-grass-400: #6ed155;
+  --color-aero-grass-500: #4bb733;
+  --color-aero-grass-600: #379426;
+  --color-aero-grass-700: #2b7420;
+  --color-aero-grass-800: #265c1e;
+  --color-aero-grass-900: #1f4a1b;
+
+  /* Aqua accent + ink */
+  --color-aero-aqua: #2fdfd0;
+  --color-aero-ink: #0d3a51;
+  --color-aero-ink-soft: #3d6b83;
+
+  --font-sans: "Segoe UI", Frutiger, "Frutiger Linotype", "Myriad Pro",
+    -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-aero: 1.5rem;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #dff3fb;
+  --foreground: var(--color-aero-ink);
+
+  /* Reusable gloss recipes */
+  --aero-gloss: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(255, 255, 255, 0.06) 46%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+  --aero-panel-bg: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(240, 252, 255, 0.66) 55%,
+    rgba(226, 248, 236, 0.62) 100%
+  );
+  --aero-panel-shadow: 0 24px 60px -22px rgba(9, 62, 92, 0.45),
+    0 2px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -18px 40px -30px rgba(43, 116, 32, 0.6) inset;
+  --aero-ring: 0 0 0 1px rgba(255, 255, 255, 0.75),
+    0 0 0 2px rgba(35, 167, 224, 0.22);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------------
+   Backdrop: sky at the top, grass glow at the bottom, sun flare top-right.
+   ------------------------------------------------------------------------ */
+@layer components {
+  .aero-bg {
+    background-color: #bfe8fa;
+    background-image:
+      radial-gradient(
+        900px 520px at 82% -10%,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0) 65%
+      ),
+      radial-gradient(
+        780px 520px at 12% 8%,
+        rgba(129, 219, 255, 0.75) 0%,
+        rgba(129, 219, 255, 0) 70%
+      ),
+      radial-gradient(
+        1100px 620px at 50% 118%,
+        rgba(110, 209, 85, 0.85) 0%,
+        rgba(110, 209, 85, 0) 68%
+      ),
+      radial-gradient(
+        700px 460px at 96% 88%,
+        rgba(47, 223, 208, 0.5) 0%,
+        rgba(47, 223, 208, 0) 70%
+      ),
+      linear-gradient(180deg, #8fd4f5 0%, #c6ecfa 40%, #dbf5e2 74%, #b9eaa4 100%);
+    background-attachment: fixed;
+  }
+
+  /* Frosted glass panel with a specular sheen across the top. */
+  .aero-panel {
+    position: relative;
+    background: var(--aero-panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: var(--radius-aero);
+    box-shadow: var(--aero-panel-shadow);
+    backdrop-filter: blur(20px) saturate(165%);
+    -webkit-backdrop-filter: blur(20px) saturate(165%);
+    overflow: hidden;
+  }
+
+  .aero-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 58%;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.78) 0%,
+      rgba(255, 255, 255, 0.28) 42%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    pointer-events: none;
+  }
+
+  .aero-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Glossy "Aqua" button. Colour comes from the --btn-* custom properties. */
+  .aero-btn {
+    --btn-top: var(--color-aero-sky-400);
+    --btn-bottom: var(--color-aero-sky-600);
+    --btn-edge: var(--color-aero-sky-700);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--btn-edge);
+    background: linear-gradient(180deg, var(--btn-top) 0%, var(--btn-bottom) 100%);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.7) inset,
+      0 -10px 18px -12px rgba(0, 0, 0, 0.55) inset,
+      0 10px 22px -10px rgba(10, 74, 110, 0.65);
+    transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .aero-btn::after {
+    content: "";
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 48%;
+    border-radius: 999px 999px 60% 60% / 999px 999px 100% 100%;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      rgba(255, 255, 255, 0.25) 100%
+    );
+    pointer-events: none;
+  }
+
+  .aero-btn > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .aero-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  .aero-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    filter: brightness(0.95);
+    box-shadow:
+      0 6px 14px -10px rgba(10, 74, 110, 0.8),
+      0 2px 10px rgba(0, 0, 0, 0.25) inset;
+  }
+
+  .aero-btn:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.55) brightness(1.05);
+    opacity: 0.6;
+  }
+
+  .aero-btn--grass {
+    --btn-top: var(--color-aero-grass-300);
+    --btn-bottom: var(--color-aero-grass-600);
+    --btn-edge: var(--color-aero-grass-700);
+  }
+
+  .aero-btn--aqua {
+    --btn-top: #7ff0e6;
+    --btn-bottom: #16b8ad;
+    --btn-edge: #0d7d76;
+  }
+
+  .aero-btn--danger {
+    --btn-top: #ff9a8b;
+    --btn-bottom: #e0402c;
+    --btn-edge: #a8271a;
+  }
+
+  /* Glass button for secondary actions. */
+  .aero-btn--glass {
+    --btn-top: rgba(255, 255, 255, 0.95);
+    --btn-bottom: rgba(228, 244, 252, 0.8);
+    --btn-edge: rgba(35, 167, 224, 0.45);
+    color: var(--color-aero-sky-800);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Inset, wet-looking text field. */
+  .aero-field {
+    width: 100%;
+    border-radius: 999px;
+    border: 1px solid rgba(35, 167, 224, 0.4);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.78) 100%
+    );
+    color: var(--color-aero-ink);
+    box-shadow:
+      0 2px 6px -2px rgba(12, 61, 89, 0.35) inset,
+      0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+  }
+
+  .aero-field::placeholder {
+    color: rgba(61, 107, 131, 0.65);
+  }
+
+  .aero-field:focus {
+    outline: none;
+    border-color: var(--color-aero-sky-500);
+    box-shadow:
+      0 2px 6px -2px rgba(12, 61, 89, 0.3) inset,
+      0 0 0 4px rgba(35, 167, 224, 0.22),
+      0 0 18px rgba(47, 223, 208, 0.35);
+  }
+
+  /* Chunky glass pill used for badges and status chips. */
+  .aero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(226, 245, 255, 0.7) 100%
+    );
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 6px 14px -10px rgba(12, 61, 89, 0.6);
+    color: var(--color-aero-sky-800);
+  }
+
+  /* Wordmark gradient. */
+  .aero-wordmark {
+    background: linear-gradient(
+      100deg,
+      var(--color-aero-sky-700) 0%,
+      var(--color-aero-sky-500) 38%,
+      var(--color-aero-grass-500) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Floating bubbles — the signature Aero flourish. Rendered by <AeroBubbles/>.
+   ------------------------------------------------------------------------ */
+.aero-bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.aero-bubble {
+  position: absolute;
+  bottom: -20vh;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 30% 26%,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 255, 255, 0.35) 22%,
+      rgba(255, 255, 255, 0) 42%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(154, 232, 255, 0.42) 0%,
+      rgba(120, 224, 178, 0.28) 60%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 26px rgba(120, 214, 255, 0.55),
+    0 0 40px rgba(255, 255, 255, 0.25) inset;
+  animation: aero-rise linear infinite;
+}
+
+@keyframes aero-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.85);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  88% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(var(--drift, 2rem), -130vh, 0) scale(1.12);
+    opacity: 0;
+  }
+}
+
+/* Slow shimmer used on headline surfaces. */
+@keyframes aero-sheen {
+  0% {
+    background-position: -180% 0;
+  }
+  100% {
+    background-position: 280% 0;
+  }
+}
+
+.aero-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.aero-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 65%
+  );
+  background-size: 260% 100%;
+  animation: aero-sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Scrollbars styled to match the glass. */
+.aero-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(35, 167, 224, 0.55) transparent;
+}
+
+.aero-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.aero-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  background-color: rgba(35, 167, 224, 0.5);
+}
+
+.aero-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aero-bubble,
+  .aero-sheen::after {
+    animation: none;
+  }
+
+  .aero-bubble {
+    display: none;
+  }
+
+  .aero-btn:hover:not(:disabled),
+  .aero-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
