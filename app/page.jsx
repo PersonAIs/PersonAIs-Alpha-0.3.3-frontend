@@ -8,8 +8,15 @@ import {
   SUPABASE_MISSING_MESSAGE,
 } from "./lib/supabaseClient";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net";
+// A URL copied from a hosting dashboard usually carries a trailing slash, and
+// `${BACKEND_URL}/api/chat` would then request `//api/chat` — a different path,
+// which the API answers with a 404. Normalize it away so the variable can be
+// pasted in either form.
+const BACKEND_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://personais-api.net"
+).replace(/\/+$/, "");
+
+const CHAT_ENDPOINT = `${BACKEND_URL}/api/chat`;
 
 const AVATAR_STORAGE_KEY = "alpha_avatar_image";
 
@@ -90,7 +97,7 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/chat`, {
+      const res = await fetch(CHAT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,14 +111,22 @@ export default function ChatPage() {
         const text = await res.text();
         console.error("Raw Server Response:", text);
         throw new Error(
-          "Matrix offline: the backend returned HTML. Verify NEXT_PUBLIC_BACKEND_URL."
+          `Matrix offline: ${CHAT_ENDPOINT} answered with ${
+            contentType || "no content-type"
+          } instead of JSON. Check NEXT_PUBLIC_BACKEND_URL points at the API.`
         );
       }
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.detail || `Server returned ${res.status}`);
+        const detail = data.detail || `Server returned ${res.status}`;
+        // A bare "Not Found" is useless on its own — say which URL was missing.
+        throw new Error(
+          res.status === 404
+            ? `${detail} — nothing is served at ${CHAT_ENDPOINT}. Check NEXT_PUBLIC_BACKEND_URL has no trailing slash or extra path.`
+            : detail
+        );
       }
 
       setMessages((prev) => [
