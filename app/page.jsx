@@ -187,7 +187,7 @@ export default function ChatPage() {
                 PersonAIs Matrix
               </h1>
               <p className="text-[11px] font-semibold text-aero-ink-soft">
-                Alpha 0.4.0 live instance
+                Alpha 0.4.1 live instance
               </p>
             </div>
           </div>

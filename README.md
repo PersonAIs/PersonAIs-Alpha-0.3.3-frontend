@@ -1,6 +1,27 @@
-# PersonAIs — Frontend (Alpha 0.4.0)
+# PersonAIs — Frontend (Alpha 0.4.1)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What changed in 0.4.1
+
+Patch release. No UI or auth changes — the fixes are all in the backend engine.
+
+- **Chat no longer dies on a bad API key.** An `ANTHROPIC_API_KEY` that is
+  missing, blank, or pasted with wrapping quotes or a trailing newline used to
+  build a client cleanly and then fail on the first message as
+  `Critical error: Anthropic Engine Error: Error code: 401`. The key is now
+  trimmed of quotes and whitespace, checked when the service boots, and the
+  problem is named in the deploy log.
+- **Provider errors stop leaking into the chat window.** A raw 401 body from
+  Anthropic used to be passed straight through to the user as chat text.
+  Failures now map to their own status codes (503 config, 429 busy, 502
+  upstream) with a plain-language message; the detail goes to the server log.
+- **Pro/Ultra replies were guaranteed to crash.** The engine read
+  `content[0].text`, but the Pro/Ultra model always emits a thinking block
+  first and that block has no `.text` field. Replies are now selected by block
+  type instead of position.
+- **New `/api/health` probe** reports whether the key and database are
+  configured, without exposing any secret.
 
 ## What changed in 0.4.0
 
