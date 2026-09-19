@@ -1,6 +1,33 @@
-# PersonAIs — Frontend (Alpha 0.4.1)
+# PersonAIs — Frontend (Alpha 0.4.2)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What changed in 0.4.2
+
+Patch release. No UI, auth or theme changes — the fix is entirely in the
+backend engine. Only the build labels move here.
+
+- **Pro and Ultra accounts could not chat at all.** Every message came back as
+  `Critical error: The AI engine is not set up correctly, so this message could
+  not be answered.` 0.4.1 sent those tiers to a second model, `claude-fable-5`,
+  which is not available on the production API key — the API answers an
+  unavailable model with a 404, and the old message named neither the model nor
+  the tier, so it looked like a key problem while `/api/health` kept reporting
+  the key as fine. Free and guest accounts were unaffected, which is why it
+  looked intermittent.
+- **One model now serves every tier**, and it is the one that was already
+  working (`claude-haiku-4-5-20251001`). The tier still selects the persona and
+  still meters credits; it no longer selects a model. There is no pro-tier
+  model until one is actually available on the key.
+- **The engine tests itself at boot.** It asks the API which models the key can
+  serve and then sends one real message. Both results, plus the list of
+  servable model ids, are on `/api/health` — so a bad model id shows up on the
+  health page at deploy time instead of in somebody's chat window.
+- **Configuration failures now say what failed.** The chat message names the
+  model and quotes the provider's own explanation instead of a flat sentence.
+
+Deploy settings, the full environment variable list and a post-deploy checklist
+live in the backend repo's `README.md`.
 
 ## What changed in 0.4.1
 

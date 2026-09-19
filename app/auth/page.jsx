@@ -217,7 +217,7 @@ export default function AuthPage() {
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 text-center">
           <span className="aero-chip px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
-            Alpha 0.4.1
+            Alpha 0.4.2
           </span>
           <h1 className="aero-wordmark mt-4 text-4xl font-extrabold tracking-tight">
             PersonAIs
