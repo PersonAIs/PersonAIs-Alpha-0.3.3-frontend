@@ -1,6 +1,23 @@
-# PersonAIs — Frontend (Alpha 0.4.2)
+# PersonAIs — Frontend (Alpha 0.4.3)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What changed in 0.4.3
+
+Patch release, backend only. Build labels move here; nothing else does.
+
+- **The real cause of the chat failure was found.** 0.4.2 added a boot self
+  test that sends one real message; on its first run it reported a `400` from
+  the API: the production key is organisation-scoped, so every request must
+  name a workspace, and nothing was naming one. That rejected **every** message
+  on every tier — it was never the model id. The engine now sends the workspace
+  header on every call, and the missing piece is a dashboard value
+  (`ANTHROPIC_WORKSPACE_ID`, or a workspace-scoped API key).
+- **`/api/health` now carries a `remedy` field** — `null` when healthy, and
+  otherwise the exact environment variable to change and where to find its
+  value.
+
+Setup steps are in the backend repo's `README.md`.
 
 ## What changed in 0.4.2
 

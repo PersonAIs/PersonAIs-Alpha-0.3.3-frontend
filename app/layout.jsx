@@ -3,11 +3,11 @@ import AppShell from "./components/AppShell";
 
 export const metadata = {
   title: {
-    default: "PersonAIs · Alpha 0.4.2",
+    default: "PersonAIs · Alpha 0.4.3",
     template: "%s · PersonAIs",
   },
   description:
-    "PersonAIs Alpha 0.4.2 — build and talk to your digital twin.",
+    "PersonAIs Alpha 0.4.3 — build and talk to your digital twin.",
 };
 
 export const viewport = {

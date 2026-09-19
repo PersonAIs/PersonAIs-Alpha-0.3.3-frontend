@@ -41,7 +41,7 @@ export default function PricingPage() {
 
         <div className="mb-10 text-center">
           <span className="aero-chip px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
-            Alpha 0.4.2
+            Alpha 0.4.3
           </span>
           <h1 className="aero-wordmark mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">
             Upgrade Your Digital Twin
