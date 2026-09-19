@@ -22,6 +22,10 @@ Patch release. No UI or auth changes — the fixes are all in the backend engine
   type instead of position.
 - **New `/api/health` probe** reports whether the key and database are
   configured, without exposing any secret.
+- **Per-tier token budgets.** Pro/Ultra runs a model that always reasons, and
+  reasoning is billed against the same token budget as the reply — so the
+  shared 1024 cap could be spent before the answer started. Pro/Ultra now gets
+  4096 tokens at bounded reasoning depth; the free tier is unchanged.
 
 ## What changed in 0.4.0
 
