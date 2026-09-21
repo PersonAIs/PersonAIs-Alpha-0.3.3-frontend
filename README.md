@@ -1,6 +1,46 @@
-# PersonAIs — Frontend (Alpha 0.4.3)
+# PersonAIs — Frontend (Alpha 0.4.4)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What's new in 0.4.4 — friends, and twins that argue for you
+
+Until now your twin only ever talked to you. 0.4.4 adds other people.
+
+- **A twin network.** `/friends` gives you a friend code (`PA-` and six
+  characters). Swap codes with somebody, accept the request, and you are
+  connected. Your email address is never searchable — with confirmation off in
+  this release, a hit would confirm the address has an account behind it.
+- **Shared discussions.** `/discuss` is a room per topic, shared with one
+  friend. There are two ways to talk in it, and they share one transcript:
+  - **Type it yourself.** An ordinary message. Free.
+  - **Send your twin.** Both twins take a turn — a *round* — working from the
+    topic, the transcript, and whatever you have typed, which your twin treats
+    as orders rather than suggestions. A round costs you one credit and your
+    friend one credit.
+- **Agree, or send them back round.** The twin that closes a round leaves a
+  proposal. You each vote on it. Both agree and it is settled. **Either of you
+  disagrees and the twins go again** — your objection becomes your twin's brief
+  for the next round — and they keep going until somebody agrees or the credits
+  run out. There is a Stop button, because it is your balance.
+- **Standing instructions.** On `/friends` you can tell your twin what it must
+  never give away ("never commit me to a weekend", "keep any budget under
+  £400"). It carries those into every discussion.
+
+Each round is its own request, so you watch them land one at a time rather than
+waiting for a balance to drain into a single response. The room polls every few
+seconds, so a discussion updates while your friend is typing in it.
+
+**The backend needs its 0.4.4 migration run before any of this works** — the
+SQL is in the backend repo's `README.md`, and `GET /api/health` reports
+`social_schema: ready` once it has been. Until then the pages say so instead of
+failing quietly.
+
+### Talking to the engine
+
+`app/lib/api.js` is the one place that calls the backend. It attaches the
+Supabase access token to every request, because the social endpoints identify
+you from that token and ignore any user id in the body — a private discussion
+between two people cannot be readable by anyone who can guess a uuid.
 
 ## What changed in 0.4.3
 
@@ -155,6 +195,9 @@ confirmed once (or deleted and re-registered) after you flip it.
 | `/setup`    | Required  | Upload the reference photo for your twin       |
 | `/settings` | Required  | Account, sign out, rebuild twin                |
 | `/pricing`  | Public    | Alpha tier and Founder pre-order               |
+| `/friends`  | Required  | Your friend code, requests, and connected twins |
+| `/discuss`  | Required  | Your shared discussions                        |
+| `/discuss/[id]` | Required | One discussion: transcript, twin rounds, verdicts |
 
 `/auth` and `/legal` render without the app sidebar — signed-out visitors should
 not see Settings and Feedback controls. That switch lives in
@@ -165,12 +208,15 @@ not see Settings and Feedback controls. That switch lives in
 ```
 app/
 ├── components/    AppShell (chrome), AeroBubbles, TermsDialog
-├── lib/           supabaseClient, authErrors, legal
+├── lib/           supabaseClient, api (engine client), session (auth guard),
+│                  authErrors, legal
 ├── auth/          gateway (login + signup)
 ├── legal/         alpha terms of service
 ├── setup/         twin initialization
 ├── settings/      account
 ├── pricing/       tiers
+├── friends/       twin network: friend code, requests, connected twins
+├── discuss/       shared discussions, and [id]/ the room itself
 ├── globals.css    Frutiger Aero tokens + component classes
 └── layout.jsx     root layout (server component, exports metadata)
 ```
@@ -188,3 +234,8 @@ npm run build
 - Feedback submissions are not persisted yet.
 - Pre-orders are a stub; no payment is taken.
 - There is no password reset, because there is no verification email.
+- A discussion room polls every six seconds rather than subscribing, so a
+  friend's message can take that long to appear.
+- A discussion is between exactly two people.
+- Both of you can ask for a round at the same moment. The engine refuses the
+  second one (`409`) and the room reloads instead of charging twice.

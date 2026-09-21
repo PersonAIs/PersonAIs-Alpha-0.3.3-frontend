@@ -10,9 +10,16 @@ const CHROMELESS_ROUTES = ["/auth", "/legal"];
 
 const NAV_ITEMS = [
   { href: "/", label: "Chat", icon: "💬" },
+  { href: "/friends", label: "Friends", icon: "🤝" },
+  { href: "/discuss", label: "Discussions", icon: "🧠" },
   { href: "/pricing", label: "Plans", icon: "✨" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
+
+// A discussion room lives under /discuss/<id>, and the sidebar should stay lit
+// while you are in one. "/" is matched exactly, or it would match everything.
+const isCurrent = (pathname, href) =>
+  href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
@@ -48,7 +55,7 @@ export default function AppShell({ children }) {
 
         <nav className="flex flex-col gap-3">
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = isCurrent(pathname, item.href);
             return (
               <Link
                 key={item.href}
