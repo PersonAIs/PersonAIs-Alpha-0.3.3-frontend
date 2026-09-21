@@ -12,6 +12,31 @@ import { SUPABASE_MISSING_MESSAGE } from "../../lib/supabaseClient";
 // table the browser is allowed to read directly.
 const POLL_MS = 6000;
 
+// The closing twin of each round ends on this line, and the engine lifts it
+// out as the proposal to vote on. Matched here too so the bubble can show it
+// as a proposal instead of as a twin that appears to be shouting a keyword.
+const PROPOSAL_MARKER = /^PROPOSAL:\s*/i;
+
+/** "1 credit", "2 credits" — a count nobody has to read twice. */
+function plural(count, noun) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/** Split a twin's message into what it said and what it is proposing. */
+function splitProposal(content) {
+  const lines = (content || "").split("\n");
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index].trim();
+    if (PROPOSAL_MARKER.test(line)) {
+      return {
+        body: lines.slice(0, index).join("\n").trim(),
+        proposal: line.replace(PROPOSAL_MARKER, "").trim(),
+      };
+    }
+  }
+  return { body: (content || "").trim(), proposal: "" };
+}
+
 /** Merge server rows into what is on screen, keyed by id, oldest first. */
 function mergeMessages(current, incoming) {
   const byId = new Map(current.map((message) => [message.id, message]));
@@ -264,6 +289,7 @@ export default function DiscussionRoomPage() {
   const hasProposal = Boolean(conversation?.proposal);
   const awaitingMyVerdict = hasProposal && conversation?.my_verdict === "pending" && !isResolved;
   const twinMode = conversation?.mode === "auto";
+  const partnerName = conversation?.partner?.display_name || "Your friend";
 
   let lastRound = 0;
 
@@ -294,15 +320,14 @@ export default function DiscussionRoomPage() {
             </div>
             <span className="aero-chip px-3 py-1.5 text-[11px] font-bold">
               <span aria-hidden="true">⚡</span>
-              {conversation ? `${conversation.my_credits} credits` : "—"}
+              {conversation ? plural(conversation.my_credits, "credit") : "—"}
             </span>
           </div>
 
           {conversation && (
             <p className="mt-2 text-[11px] text-aero-ink-soft">
               A round is one turn each and costs you both a credit.{" "}
-              {conversation.partner?.display_name || "They"} have{" "}
-              {conversation.partner_credits}.
+              {partnerName} has {plural(conversation.partner_credits, "credit")} left.
             </p>
           )}
         </header>
@@ -328,6 +353,9 @@ export default function DiscussionRoomPage() {
             const isSystem = message.author === "system";
             const startsRound = isTwin && message.round > lastRound;
             if (startsRound) lastRound = message.round;
+            const { body, proposal } = isTwin
+              ? splitProposal(message.content)
+              : { body: message.content, proposal: "" };
 
             if (isSystem) {
               return (
@@ -360,8 +388,13 @@ export default function DiscussionRoomPage() {
                       } ${isTwin ? "text-aero-grass-700" : "text-aero-sky-600"}`}
                     >
                       {isTwin ? "🧬 " : ""}
-                      {isMine ? "You" : message.speaker}
-                      {isTwin ? "’s twin" : ""}
+                      {isMine
+                        ? isTwin
+                          ? "Your twin"
+                          : "You"
+                        : isTwin
+                          ? `${message.speaker}’s twin`
+                          : message.speaker}
                     </p>
                     <div
                       className={`whitespace-pre-wrap rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm ${
@@ -376,7 +409,21 @@ export default function DiscussionRoomPage() {
                             : "rounded-bl-md border border-white/85 bg-white/85 text-aero-ink"
                       }`}
                     >
-                      {message.content}
+                      {body}
+                      {proposal && (
+                        <span
+                          className={`mt-3 block rounded-xl border border-aero-grass-200 bg-aero-grass-50/80 px-3 py-2 ${
+                            body ? "" : "mt-0"
+                          }`}
+                        >
+                          <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-aero-grass-700">
+                            Proposes
+                          </span>
+                          <span className="mt-0.5 block font-semibold text-aero-ink">
+                            {proposal}
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -436,8 +483,10 @@ export default function DiscussionRoomPage() {
                   </button>
                   <span className="self-center text-[11px] text-aero-ink-soft">
                     {conversation.partner_verdict === "agree"
-                      ? `${conversation.partner?.display_name} has agreed.`
-                      : "Disagreeing sends the twins back round."}
+                      ? `${partnerName} has agreed.`
+                      : canDeliberate
+                        ? "Disagreeing sends the twins back round."
+                        : "There are no credits left for another round."}
                   </span>
                 </div>
 
@@ -483,7 +532,7 @@ export default function DiscussionRoomPage() {
               <p className="mt-2 text-xs font-semibold text-aero-ink-soft">
                 You said you {conversation.my_verdict}.{" "}
                 {conversation.partner_verdict === "pending"
-                  ? `Waiting on ${conversation.partner?.display_name || "the other side"}.`
+                  ? `Waiting on ${partnerName}.`
                   : `They said they ${conversation.partner_verdict}.`}
               </p>
             )}
@@ -587,10 +636,10 @@ export default function DiscussionRoomPage() {
             </button>
             <span className="text-[11px] text-aero-ink-soft">
               {isResolved
-                ? "Settled."
+                ? "Settled — the twins have stopped."
                 : canDeliberate
                   ? "Each round costs you one credit and your friend one credit."
-                  : conversation?.stop_detail || "No credits left for a round."}
+                  : "No credits left for another round."}
             </span>
           </div>
         </div>
