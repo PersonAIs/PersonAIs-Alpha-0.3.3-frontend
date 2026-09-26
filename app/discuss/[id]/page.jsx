@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AeroBubbles from "../../components/AeroBubbles";
 import { apiGet, apiPost } from "../../lib/api";
+import { blockedMessage, hasDailyLimit, plural, resetPhrase } from "../../lib/limits";
 import { useRequireSession } from "../../lib/session";
 import { SUPABASE_MISSING_MESSAGE } from "../../lib/supabaseClient";
 
@@ -16,11 +17,6 @@ const POLL_MS = 6000;
 // out as the proposal to vote on. Matched here too so the bubble can show it
 // as a proposal instead of as a twin that appears to be shouting a keyword.
 const PROPOSAL_MARKER = /^PROPOSAL:\s*/i;
-
-/** "1 credit", "2 credits" — a count nobody has to read twice. */
-function plural(count, noun) {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`;
-}
 
 /** Split a twin's message into what it said and what it is proposing. */
 function splitProposal(content) {
@@ -155,7 +151,9 @@ export default function DiscussionRoomPage() {
           setMessages((existing) => mergeMessages(existing, data.messages ?? []));
 
           if (data.rounds_run === 0 || !data.can_continue) {
-            if (data.stop_reason) setNotice(data.conversation.stop_detail || "");
+            if (data.stop_reason) {
+              setNotice(blockedMessage(data.conversation, data.conversation.partner?.display_name));
+            }
             break;
           }
           if (!continuous || stopRef.current) break;
@@ -238,9 +236,9 @@ export default function DiscussionRoomPage() {
           // The point of disagreeing: the twins go again, and keep going.
           runDeliberation(true);
         } else {
+          // Recorded all the same: your twin argues it once there is budget.
           setNotice(
-            data.conversation.stop_detail ||
-              "There are no credits left for another round."
+            blockedMessage(data.conversation, data.conversation.partner?.display_name)
           );
         }
       } else {
@@ -291,6 +289,28 @@ export default function DiscussionRoomPage() {
   const twinMode = conversation?.mode === "auto";
   const partnerName = conversation?.partner?.display_name || "Your friend";
 
+  // Today's twin-round allowance (0.4.5): null when the engine has none, or
+  // could not count it. blockedHint says why the twins cannot go again, with
+  // the reset in the reader's own time.
+  const dailyLimit = hasDailyLimit(conversation) ? conversation.daily_limit : null;
+  const blockedHint = blockedMessage(conversation, partnerName);
+
+  let partnerSentence = "";
+  if (conversation) {
+    const credits = plural(conversation.partner_credits, "credit");
+    const partnerLeft = conversation.partner_daily_left;
+    partnerSentence = `${partnerName} has ${credits} left.`;
+    if (dailyLimit > 0 && partnerLeft != null && conversation.partner_credits > 0) {
+      partnerSentence =
+        partnerLeft > 0
+          ? `${partnerName} has ${credits} left and can spend ${Math.min(
+              partnerLeft,
+              conversation.partner_credits
+            )} more today.`
+          : `${partnerName} has ${credits} left but has used today's ${dailyLimit}.`;
+    }
+  }
+
   let lastRound = 0;
 
   return (
@@ -322,12 +342,31 @@ export default function DiscussionRoomPage() {
               <span aria-hidden="true">⚡</span>
               {conversation ? plural(conversation.my_credits, "credit") : "—"}
             </span>
+            {dailyLimit != null && (
+              <span
+                className="aero-chip px-3 py-1.5 text-[11px] font-bold"
+                title={
+                  dailyLimit === 0
+                    ? "Twin rounds are paused for now."
+                    : `Credits you can still spend on twin rounds today. Back to ${dailyLimit} ${resetPhrase(
+                        conversation.daily_resets_at
+                      )}.`
+                }
+              >
+                <span aria-hidden="true">🗓</span>
+                {dailyLimit === 0
+                  ? "Rounds paused"
+                  : `${conversation.my_daily_left} of ${dailyLimit} today`}
+                <span className="sr-only"> — twin-round credits left today</span>
+              </span>
+            )}
           </div>
 
           {conversation && (
             <p className="mt-2 text-[11px] text-aero-ink-soft">
-              A round is one turn each and costs you both a credit.{" "}
-              {partnerName} has {plural(conversation.partner_credits, "credit")} left.
+              A round is one turn each and costs you both a credit
+              {dailyLimit > 0 && `, up to ${plural(dailyLimit, "credit")} a day each`}.{" "}
+              {partnerSentence}
             </p>
           )}
         </header>
@@ -405,7 +444,7 @@ export default function DiscussionRoomPage() {
                                 : "rounded-bl-md border-aero-sky-300"
                             }`
                           : isMine
-                            ? "rounded-br-md border border-aero-sky-600 bg-gradient-to-b from-aero-sky-400 to-aero-sky-600 text-white"
+                            ? "aero-fill rounded-br-md border"
                             : "rounded-bl-md border border-white/85 bg-white/85 text-aero-ink"
                       }`}
                     >
@@ -486,7 +525,9 @@ export default function DiscussionRoomPage() {
                       ? `${partnerName} has agreed.`
                       : canDeliberate
                         ? "Disagreeing sends the twins back round."
-                        : "There are no credits left for another round."}
+                        : conversation.blocked_reason === "round_cap"
+                          ? blockedHint
+                          : "Disagreeing records your objection. Your twin argues it in the next round."}
                   </span>
                 </div>
 
@@ -521,8 +562,10 @@ export default function DiscussionRoomPage() {
                       </button>
                       <span className="text-[11px] text-aero-ink-soft">
                         {canDeliberate
-                          ? "They will keep talking until you agree or the credits run out."
-                          : "There are no credits left for another round."}
+                          ? dailyLimit > 0
+                            ? "They will keep talking until you agree, the credits run out, or one of you reaches today's limit."
+                            : "They will keep talking until you agree or the credits run out."
+                          : blockedHint}
                       </span>
                     </div>
                   </div>
@@ -638,8 +681,10 @@ export default function DiscussionRoomPage() {
               {isResolved
                 ? "Settled — the twins have stopped."
                 : canDeliberate
-                  ? "Each round costs you one credit and your friend one credit."
-                  : "No credits left for another round."}
+                  ? dailyLimit > 0
+                    ? `Each round costs you one credit and your friend one credit. You have ${conversation.my_daily_left} of today's ${dailyLimit} left.`
+                    : "Each round costs you one credit and your friend one credit."
+                  : blockedHint}
             </span>
           </div>
         </div>

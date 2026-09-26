@@ -134,7 +134,7 @@ export default function SetupPage() {
             />
 
             {avatarPreview ? (
-              <span className="relative block h-36 w-36 overflow-hidden rounded-full border-4 border-white shadow-[0_16px_32px_-18px_rgba(12,61,89,0.9)]">
+              <span className="relative block h-36 w-36 overflow-hidden rounded-full border-4 border-white shadow-[0_16px_32px_-18px_color-mix(in_srgb,var(--aero-shade)_90%,transparent)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={avatarPreview}

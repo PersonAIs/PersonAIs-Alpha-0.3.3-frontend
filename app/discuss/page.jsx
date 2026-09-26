@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AeroBubbles from "../components/AeroBubbles";
 import { apiGet } from "../lib/api";
+import { plural, resetPhrase } from "../lib/limits";
 import { useRequireSession } from "../lib/session";
 import { SUPABASE_MISSING_MESSAGE } from "../lib/supabaseClient";
 
@@ -14,9 +15,19 @@ export const STATUS_LABELS = {
   exhausted: { label: "Out of credits", className: "text-red-600" },
 };
 
+// A room the twins cannot go round in says why, whatever its stored status.
+// The engine reopens one held only by the day on its own, so that one reads
+// as a pause rather than an alarm.
+const BLOCKED_LABELS = {
+  credits_exhausted: STATUS_LABELS.exhausted,
+  daily_limit: { label: "Daily limit reached", className: "text-aero-sky-800" },
+  round_cap: { label: "Round limit reached", className: "text-red-600" },
+};
+
 export default function DiscussionsPage() {
   const { isAuthenticating, isSupabaseConfigured } = useRequireSession();
   const [conversations, setConversations] = useState([]);
+  const [usage, setUsage] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,6 +35,7 @@ export default function DiscussionsPage() {
     try {
       const data = await apiGet("/api/social/conversations", { signal });
       setConversations(data.conversations ?? []);
+      setUsage(data.usage ?? null);
       setError("");
     } catch (loadError) {
       if (loadError?.name === "AbortError") return;
@@ -84,6 +96,16 @@ export default function DiscussionsPage() {
             <p className="mt-1 text-sm text-aero-ink-soft">
               Shared rooms where you and a friend — or your twins — work something out.
             </p>
+            {usage?.daily_limit > 0 && usage.left_today != null && (
+              <p className="aero-chip mt-3 px-3 py-1.5 text-[11px] font-bold">
+                <span aria-hidden="true">🗓</span>
+                {usage.left_today > 0
+                  ? `${usage.left_today} of today's ${plural(usage.daily_limit, "twin-round credit")} left`
+                  : "No twin-round credits left today"}
+                {" · "}
+                {usage.left_today > 0 ? "resets" : "back"} {resetPhrase(usage.resets_at)}
+              </p>
+            )}
           </div>
           <Link href="/friends" className="aero-btn px-5 py-2.5 text-sm">
             <span>+ New discussion</span>
@@ -120,7 +142,10 @@ export default function DiscussionsPage() {
 
         <ul className="grid gap-3">
           {conversations.map((conversation) => {
-            const status = STATUS_LABELS[conversation.status] || STATUS_LABELS.open;
+            const status =
+              (conversation.status !== "resolved" && BLOCKED_LABELS[conversation.blocked_reason]) ||
+              STATUS_LABELS[conversation.status] ||
+              STATUS_LABELS.open;
             const needsYou =
               conversation.status === "deliberating" && conversation.my_verdict === "pending";
             return (

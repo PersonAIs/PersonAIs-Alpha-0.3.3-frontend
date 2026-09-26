@@ -7,6 +7,7 @@ const FREE_FEATURES = [
   { label: "Create 1 Digital Twin Avatar", included: true },
   { label: "Claude Haiku 4.5 response engine", included: true },
   { label: "20 messages per 24-hour cycle", included: true },
+  { label: "Twin discussions: up to 3 credits a day", included: true },
   { label: "8K cinematic generation", included: false },
 ];
 
@@ -41,7 +42,7 @@ export default function PricingPage() {
 
         <div className="mb-10 text-center">
           <span className="aero-chip px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
-            Alpha 0.4.4
+            Alpha 0.4.5
           </span>
           <h1 className="aero-wordmark mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">
             Upgrade Your Digital Twin

@@ -165,7 +165,7 @@ export default function ChatPage() {
       <div className="aero-panel relative z-10 flex h-full max-h-[calc(100vh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex flex-none items-center justify-between border-b border-white/70 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 flex-none overflow-hidden rounded-full border-2 border-white bg-aero-sky-100 shadow-[0_6px_14px_-8px_rgba(12,61,89,0.9)]">
+            <div className="h-11 w-11 flex-none overflow-hidden rounded-full border-2 border-white bg-aero-sky-100 shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--aero-shade)_90%,transparent)]">
               {avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -187,7 +187,7 @@ export default function ChatPage() {
                 PersonAIs Matrix
               </h1>
               <p className="text-[11px] font-semibold text-aero-ink-soft">
-                Alpha 0.4.4 live instance
+                Alpha 0.4.5 live instance
               </p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function ChatPage() {
               <div
                 className={`max-w-[78%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm ${
                   msg.role === "user"
-                    ? "rounded-br-md border border-aero-sky-600 bg-gradient-to-b from-aero-sky-400 to-aero-sky-600 text-white"
+                    ? "aero-fill rounded-br-md border"
                     : msg.isError
                       ? "rounded-bl-md border border-red-200 bg-red-50/90 text-red-700"
                       : "rounded-bl-md border border-white/85 bg-white/85 text-aero-ink"

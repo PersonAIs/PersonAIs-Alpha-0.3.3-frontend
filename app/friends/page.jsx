@@ -172,6 +172,14 @@ export default function FriendsPage() {
   }
 
   const me = network?.me;
+  // Engines before 0.4.5 send no usage, and then the hint just leaves it out.
+  const dailyLimit = network?.usage?.daily_limit;
+  const twinsHint =
+    dailyLimit === 0
+      ? "Paused for now"
+      : dailyLimit > 0
+        ? `1 credit each per round · up to ${dailyLimit} a day`
+        : "1 credit each per round";
   const friends = network?.friends ?? [];
   const incoming = network?.incoming ?? [];
   const outgoing = network?.outgoing ?? [];
@@ -429,7 +437,7 @@ export default function FriendsPage() {
                       <legend className="sr-only">How to talk</legend>
                       {[
                         { value: "manual", label: "💬 We type", hint: "Free" },
-                        { value: "auto", label: "🧬 Our twins talk", hint: "1 credit each per round" },
+                        { value: "auto", label: "🧬 Our twins talk", hint: twinsHint },
                       ].map((option) => (
                         <button
                           key={option.value}
