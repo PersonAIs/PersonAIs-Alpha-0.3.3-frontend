@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
+import { applyTheme, readStoredTheme } from "../lib/theme";
 
 // The gateway and the terms are shown to signed-out visitors, so they render
 // full-bleed without the app sidebar. Previously the sidebar (with its Settings
@@ -28,6 +29,18 @@ export default function AppShell({ children }) {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
 
+  // The boot script in the root layout has already coloured the first paint.
+  // This re-applies it after React's development remount, which resets the
+  // attributes on <html> (a no-op in production), sets the toolbar tint, and
+  // follows a theme picked in another tab. It reads storage rather than React
+  // state so hydration can never paint Aero over a saved colour.
+  useLayoutEffect(() => {
+    applyTheme(readStoredTheme());
+    const follow = () => applyTheme(readStoredTheme());
+    window.addEventListener("storage", follow);
+    return () => window.removeEventListener("storage", follow);
+  }, []);
+
   const isChromeless = CHROMELESS_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
@@ -45,7 +58,7 @@ export default function AppShell({ children }) {
 
   return (
     <div className="flex h-screen">
-      <aside className="z-30 flex w-24 flex-none flex-col items-center justify-between border-r border-white/70 bg-white/45 py-6 shadow-[4px_0_24px_-18px_rgba(9,62,92,0.8)] backdrop-blur-xl">
+      <aside className="z-30 flex w-24 flex-none flex-col items-center justify-between border-r border-white/70 bg-white/45 py-6 shadow-[4px_0_24px_-18px_color-mix(in_srgb,var(--aero-shade)_80%,transparent)] backdrop-blur-xl">
         <Link href="/" className="flex flex-col items-center gap-1" title="PersonAIs">
           <span className="aero-wordmark text-3xl font-extrabold tracking-tight">P</span>
           <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-aero-sky-700">

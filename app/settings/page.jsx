@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AeroBubbles from "../components/AeroBubbles";
+import ThemePicker from "../components/ThemePicker";
 import { TERMS_VERSION } from "../lib/legal";
 import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
 
@@ -105,7 +106,7 @@ export default function SettingsPage() {
               <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-aero-sky-600">
                 Build
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-aero-ink">Alpha 0.4.4</dd>
+              <dd className="mt-1 text-sm font-semibold text-aero-ink">Alpha 0.4.5</dd>
             </div>
           </dl>
 
@@ -165,6 +166,19 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        <section className="aero-panel mb-6 p-8" aria-labelledby="theme-colour-title">
+          <h2 id="theme-colour-title" className="text-lg font-bold text-aero-sky-800">
+            Theme colour
+          </h2>
+          <p className="mt-1 text-sm text-aero-ink-soft">
+            Dress PersonAIs in any of the basic colours. It changes the moment you
+            pick, and this browser remembers your choice.
+          </p>
+          <div className="mt-6">
+            <ThemePicker />
+          </div>
+        </section>
 
         <div className="aero-panel p-6">
           <h2 className="text-sm font-bold text-aero-sky-800">Legal</h2>

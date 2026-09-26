@@ -1,6 +1,67 @@
-# PersonAIs — Frontend (Alpha 0.4.4)
+# PersonAIs — Frontend (Alpha 0.4.5)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What's new in 0.4.5 — your colour, and a daily limit on twin rounds
+
+### Pick the theme colour
+
+**Settings → Theme colour** dresses the whole app in Aero's own sky and grass
+(the default, unchanged) or any of the basic colours: **red, orange, yellow,
+green, blue, purple, pink, brown or grey**. It changes the moment you pick —
+the page you are on is the preview — and this browser remembers it. The
+signed-out pages (sign-in, terms) wear it too.
+
+It is still Frutiger Aero in every colour: the gloss, glass and bubbles stay,
+only the two accents change. Each colour keeps Aero's lightness at every step
+of its scales, so a heading, a label or a link is exactly as readable in every
+colour as in Aero, and nowhere less.
+
+How it works, for whoever touches it next:
+
+- `app/globals.css` — every colour in the app is a `--color-aero-*` token (or
+  mixed from one), and Tailwind classes such as `text-aero-sky-800` read them
+  through `var()`. A theme is just a block of new token values under
+  `:root[data-theme="…"]`, at the end of the file. Aero's own token values are
+  unchanged. Turning the old hard-coded colours into tokens was checked with a
+  screenshot diff of every page against 0.4.4: no pixel moved by more than
+  4/255.
+- `app/lib/theme.js` — the list of colours, and the helpers that apply and
+  remember one (`localStorage`, key `personais_theme`).
+- `app/layout.jsx` — a tiny inline script in `<head>` sets `data-theme` while
+  the page is still being parsed, so a red page never paints blue first (the
+  pattern from Next's *Preventing flash before hydration* guide).
+  `components/AppShell.jsx` re-applies it after React's development remount
+  and follows a colour picked in another tab.
+- `app/components/ThemePicker.jsx` — the picker: native radio buttons, so the
+  arrow keys move through the colours.
+
+To add a colour: add a block to the end of `globals.css` (both scales, `aqua`,
+`ink`, `ink-soft`) and an entry to `THEMES` in `lib/theme.js`.
+
+### A daily limit on twin discussions
+
+A pair of twins that would not agree could spend a whole balance in one
+sitting. The engine now caps it: **each of you may spend up to three credits a
+day on twin rounds** — three rounds a day, since a round costs each side one.
+The day is the UTC day; the pages turn that into your own time.
+
+- **In a room**, a 🗓 chip next to your credits shows what is left today
+  ("2 of 3 today"), and the header says how much your friend has left.
+- **When the limit is reached** the twins stop, both of you see why, and the
+  buttons say when they can carry on — "The twins can carry on at 8:00 PM."
+  The room reopens by itself when the day turns over; nobody has to press
+  anything. Disagreeing still works: your objection is kept, and your twin
+  argues it in the next round.
+- **On `/discuss`** your allowance sits under the heading, and a room held by
+  the limit reads *Daily limit reached* rather than *Out of credits*.
+- Typing to each other is still free and unlimited.
+
+The limit lives in the engine (`DISCUSSION_DAILY_CREDIT_LIMIT`, default `3`);
+the pages show whatever it reports. **The engine needs its 0.4.5 migration
+run** (`migrations/0002_discussion_limits_0.4.5.sql` in the backend repo).
+Until then friends and discussions keep working, but asking for a twin round
+shows the engine's message naming that file.
 
 ## What's new in 0.4.4 — friends, and twins that argue for you
 
@@ -193,7 +254,7 @@ confirmed once (or deleted and re-registered) after you flip it.
 | `/auth`     | Public    | Log in / create account                        |
 | `/legal`    | Public    | Temporary alpha terms of service               |
 | `/setup`    | Required  | Upload the reference photo for your twin       |
-| `/settings` | Required  | Account, sign out, rebuild twin                |
+| `/settings` | Required  | Account, theme colour, sign out, rebuild twin  |
 | `/pricing`  | Public    | Alpha tier and Founder pre-order               |
 | `/friends`  | Required  | Your friend code, requests, and connected twins |
 | `/discuss`  | Required  | Your shared discussions                        |
@@ -207,9 +268,10 @@ not see Settings and Feedback controls. That switch lives in
 
 ```
 app/
-├── components/    AppShell (chrome), AeroBubbles, TermsDialog
+├── components/    AppShell (chrome), AeroBubbles, TermsDialog, ThemePicker
 ├── lib/           supabaseClient, api (engine client), session (auth guard),
-│                  authErrors, legal
+│                  authErrors, legal, theme (colour themes), limits (daily
+│                  allowance copy)
 ├── auth/          gateway (login + signup)
 ├── legal/         alpha terms of service
 ├── setup/         twin initialization
@@ -217,7 +279,7 @@ app/
 ├── pricing/       tiers
 ├── friends/       twin network: friend code, requests, connected twins
 ├── discuss/       shared discussions, and [id]/ the room itself
-├── globals.css    Frutiger Aero tokens + component classes
+├── globals.css    Frutiger Aero tokens, component classes, colour themes
 └── layout.jsx     root layout (server component, exports metadata)
 ```
 
@@ -239,3 +301,7 @@ npm run build
 - A discussion is between exactly two people.
 - Both of you can ask for a round at the same moment. The engine refuses the
   second one (`409`) and the room reloads instead of charging twice.
+- The theme colour is kept in this browser, like the reference photo — it
+  does not follow your account to another browser or device.
+- The daily allowance turns over at midnight UTC for everybody, so in the
+  Americas it comes back in the evening. The pages show that time in yours.
