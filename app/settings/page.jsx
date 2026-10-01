@@ -106,7 +106,7 @@ export default function SettingsPage() {
               <dt className="text-[11px] font-bold uppercase tracking-[0.14em] text-aero-sky-600">
                 Build
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-aero-ink">Alpha 0.4.5</dd>
+              <dd className="mt-1 text-sm font-semibold text-aero-ink">Alpha 0.4.6</dd>
             </div>
           </dl>
 

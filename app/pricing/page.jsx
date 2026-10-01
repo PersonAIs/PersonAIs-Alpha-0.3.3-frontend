@@ -2,6 +2,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import AeroBubbles from "../components/AeroBubbles";
+import {
+  BETA_LAUNCH,
+  PREORDER_MAX_TERM,
+  PREORDERS_OPEN,
+} from "../lib/announcements";
 
 const FREE_FEATURES = [
   { label: "Create 1 Digital Twin Avatar", included: true },
@@ -12,7 +17,7 @@ const FREE_FEATURES = [
 ];
 
 const FOUNDER_FEATURES = [
-  "2 years of Ultra access (starts at Beta)",
+  "2 years of Ultra access, starting at Beta",
   "Uncapped chat limits",
   "Priority GPU queue",
   'Exclusive "Founder" UI badge',
@@ -23,8 +28,9 @@ export default function PricingPage() {
 
   const handlePreOrder = (event) => {
     event.preventDefault();
+    // No payments are wired up in this build: the button only says when.
     setCheckoutMessage(
-      "Pre-orders are not open yet. Commercial transactions unlock after Alpha Week."
+      `Pre-orders open ${PREORDERS_OPEN.label}. No payment is taken in this build.`
     );
     setTimeout(() => setCheckoutMessage(""), 4000);
   };
@@ -42,16 +48,61 @@ export default function PricingPage() {
 
         <div className="mb-10 text-center">
           <span className="aero-chip px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]">
-            Alpha 0.4.5
+            Alpha 0.4.6
           </span>
           <h1 className="aero-wordmark mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">
             Upgrade Your Digital Twin
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-base text-aero-ink-soft">
-            Test the matrix free this week, or get ready for the Founder
-            Pre-Order.
+            Test the matrix free this week, or get ready to pre-order a
+            subscription for Beta.
           </p>
         </div>
+
+        <section
+          aria-labelledby="beta-dates-title"
+          className="aero-panel mb-10 w-full p-6 md:p-8"
+        >
+          <h2 id="beta-dates-title" className="sr-only">
+            Beta and pre-order dates
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex gap-4 rounded-2xl border border-white/80 bg-white/60 p-4">
+              <span aria-hidden="true" className="text-2xl leading-none">
+                🎟️
+              </span>
+              <p>
+                <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-aero-grass-700">
+                  <time dateTime={PREORDERS_OPEN.iso}>{PREORDERS_OPEN.label}</time>
+                </span>
+                <span className="mt-1 block font-bold text-aero-sky-800">
+                  Pre-orders go live
+                </span>
+                <span className="mt-1 block text-sm text-aero-ink-soft">
+                  Subscribe for up to {PREORDER_MAX_TERM}, ahead of Beta.
+                </span>
+              </p>
+            </div>
+            <div className="flex gap-4 rounded-2xl border border-white/80 bg-white/60 p-4">
+              <span aria-hidden="true" className="text-2xl leading-none">
+                🚀
+              </span>
+              <p>
+                <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-aero-sky-600">
+                  <time dateTime={BETA_LAUNCH.iso}>{BETA_LAUNCH.label}</time>
+                </span>
+                <span className="mt-1 block font-bold text-aero-sky-800">Beta launches</span>
+                <span className="mt-1 block text-sm text-aero-ink-soft">
+                  Every pre-ordered subscription starts that day, not the day
+                  you order.
+                </span>
+              </p>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-aero-ink-soft">
+            Nothing can be bought yet: no payment is taken in this build.
+          </p>
+        </section>
 
         {checkoutMessage && (
           <div
@@ -59,7 +110,7 @@ export default function PricingPage() {
             className="aero-panel fixed left-1/2 top-8 z-50 flex -translate-x-1/2 items-center gap-3 px-6 py-4"
           >
             <span aria-hidden="true" className="text-xl">
-              ⚠️
+              🗓️
             </span>
             <p className="text-sm font-bold text-aero-sky-800">{checkoutMessage}</p>
           </div>
@@ -117,7 +168,7 @@ export default function PricingPage() {
                 2-Year Founder Pass
               </h2>
               <p className="mt-1 text-sm font-semibold text-aero-grass-700">
-                Pre-orders coming soon
+                Pre-orders open {PREORDERS_OPEN.label}
               </p>
             </div>
 

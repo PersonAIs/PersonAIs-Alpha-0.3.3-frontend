@@ -1,6 +1,38 @@
-# PersonAIs — Frontend (Alpha 0.4.5)
+# PersonAIs — Frontend (Alpha 0.4.6)
 
 Next.js 16 (App Router) front end for the PersonAIs digital-twin alpha.
+
+## What's new in 0.4.6 — Beta's date, and pre-orders
+
+Minor release, front end only. No engine change, no migration, and **no
+payments**: pre-orders are announced, not wired up.
+
+- **Beta launches Saturday, October 31.** A popup on the main page says so the
+  first time you open the chat after this release.
+- **Pre-orders go live Saturday, October 3**, for subscriptions of up to two
+  years. Every subscription starts the day Beta launches, not the day you
+  order. The same popup announces it.
+- **The Plans page** carries both dates above the plans, the Founder Pass reads
+  *Pre-orders open Saturday, October 3* instead of *coming soon*, and its
+  Pre-Order button says when pre-orders open. It still takes no payment.
+
+The popup shows once per browser. Closing it in any way (*Got it*, *See the
+plans*, Escape or a click outside) is remembered in `localStorage`, key
+`personais_announcement_dismissed`. It is a native `<dialog>` opened with
+`showModal()`, so the browser keeps keyboard focus inside it and the chat
+behind it cannot be clicked until it is closed. It wears the theme colour like
+everything else.
+
+How it works, for whoever touches it next:
+
+- `app/lib/announcements.js` — the two dates, the longest subscription term,
+  and the announcement id. The popup and the Plans page both read from here, so
+  change a date in one place. The dates are written out ("Saturday, October 3")
+  rather than formatted from a `Date`: a date-only `Date` is midnight UTC, which
+  reads as the day before anywhere in the Americas.
+- `app/components/BetaAnnouncement.jsx` — the popup, mounted by `app/page.jsx`.
+- **To announce something new**, change the copy and give `ANNOUNCEMENT_ID` a
+  new value: everybody sees the new one once, whatever they dismissed before.
 
 ## What's new in 0.4.5 — your colour, and a daily limit on twin rounds
 
@@ -268,10 +300,11 @@ not see Settings and Feedback controls. That switch lives in
 
 ```
 app/
-├── components/    AppShell (chrome), AeroBubbles, TermsDialog, ThemePicker
+├── components/    AppShell (chrome), AeroBubbles, TermsDialog, ThemePicker,
+│                  BetaAnnouncement (the 0.4.6 popup)
 ├── lib/           supabaseClient, api (engine client), session (auth guard),
 │                  authErrors, legal, theme (colour themes), limits (daily
-│                  allowance copy)
+│                  allowance copy), announcements (Beta and pre-order dates)
 ├── auth/          gateway (login + signup)
 ├── legal/         alpha terms of service
 ├── setup/         twin initialization
@@ -294,7 +327,14 @@ npm run build
 
 - The reference photo is kept in `localStorage`, not uploaded anywhere.
 - Feedback submissions are not persisted yet.
-- Pre-orders are a stub; no payment is taken.
+- Pre-orders are announced for Saturday, October 3, but not wired up: the
+  Pre-Order button says when they open, and no payment is taken. Only the
+  2-Year Founder Pass is on the Plans page; shorter terms have no price yet.
+- The alpha terms (`app/lib/legal.js`) say they must be replaced with
+  lawyer-reviewed terms before PersonAIs takes payments. That has to happen
+  before pre-orders take money.
+- The announcement's dismissal is kept in this browser, like the theme colour,
+  so it shows once more in another browser or device.
 - There is no password reset, because there is no verification email.
 - A discussion room polls every six seconds rather than subscribing, so a
   friend's message can take that long to appear.

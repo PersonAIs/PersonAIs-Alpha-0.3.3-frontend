@@ -4,11 +4,11 @@ import { THEME_BOOT_SCRIPT } from "./lib/theme";
 
 export const metadata = {
   title: {
-    default: "PersonAIs · Alpha 0.4.5",
+    default: "PersonAIs · Alpha 0.4.6",
     template: "%s · PersonAIs",
   },
   description:
-    "PersonAIs Alpha 0.4.5 — build and talk to your digital twin.",
+    "PersonAIs Alpha 0.4.6 — build and talk to your digital twin.",
 };
 
 // Aero's toolbar tint. A colour theme swaps it once the page is running (see

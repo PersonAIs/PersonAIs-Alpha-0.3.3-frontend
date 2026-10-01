@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AeroBubbles from "./components/AeroBubbles";
+import BetaAnnouncement from "./components/BetaAnnouncement";
 import {
   isSupabaseConfigured,
   supabase,
@@ -161,6 +162,7 @@ export default function ChatPage() {
   return (
     <div className="relative flex h-full flex-col items-center justify-center p-4 md:p-6">
       <AeroBubbles />
+      <BetaAnnouncement />
 
       <div className="aero-panel relative z-10 flex h-full max-h-[calc(100vh-3rem)] w-full max-w-3xl flex-col">
         <header className="flex flex-none items-center justify-between border-b border-white/70 px-6 py-4">
@@ -187,7 +189,7 @@ export default function ChatPage() {
                 PersonAIs Matrix
               </h1>
               <p className="text-[11px] font-semibold text-aero-ink-soft">
-                Alpha 0.4.5 live instance
+                Alpha 0.4.6 live instance
               </p>
             </div>
           </div>
